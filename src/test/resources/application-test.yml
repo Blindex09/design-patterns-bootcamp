@@ -1,0 +1,57 @@
+# Configuracoes de teste
+spring:
+  application:
+    name: Design Patterns Bootcamp API - Test Mode
+  
+  # Configuracao do banco H2 para testes
+  datasource:
+    url: jdbc:h2:mem:testdb-${random.uuid}
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: 
+  
+  # Configuracao do JPA para testes
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+    format-sql: false
+    defer-datasource-initialization: true
+  
+  # Console do H2 desabilitado em testes
+  h2:
+    console:
+      enabled: false
+
+# Configuracao do servidor para testes
+server:
+  port: 0  # Porta aleatoria para evitar conflitos
+
+# Configuracao de logs para testes
+logging:
+  level:
+    com.bootcamp.designpatterns: WARN
+    org.springframework.web: WARN
+    org.hibernate.SQL: WARN
+    org.springframework.test: INFO
+  pattern:
+    console: "%d{HH:mm:ss.SSS} [TEST] [%thread] %-5level %logger{36} - %msg%n"
+
+# Configuracao do Swagger desabilitada para testes
+springdoc:
+  swagger-ui:
+    enabled: false
+  api-docs:
+    enabled: false
+
+# Configuracoes especificas para teste
+test:
+  database:
+    cleanup: true
+  mock:
+    external-services: true
+  timeout:
+    short: 1000   # 1 segundo
+    medium: 5000  # 5 segundos 
+    long: 10000   # 10 segundos
