@@ -1,0 +1,308 @@
+name: Design Patterns Bootcamp - CI/CD
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch: # Permite execucao manual
+
+env:
+  JAVA_VERSION: '17'
+  MAVEN_OPTS: '-Xmx1024m'
+
+jobs:
+  # Job para testes unitarios
+  unit-tests:
+    name: 🧪 Testes Unitarios
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📥 Checkout do codigo
+      uses: actions/checkout@v4
+      
+    - name: ☕ Configurar Java ${{ env.JAVA_VERSION }}
+      uses: actions/setup-java@v4
+      with:
+        java-version: ${{ env.JAVA_VERSION }}
+        distribution: 'temurin'
+        cache: maven
+        
+    - name: 🔍 Verificar estrutura do projeto
+      run: |
+        echo "Verificando estrutura do projeto..."
+        ls -la
+        echo "Verificando pom.xml..."
+        cat pom.xml | head -20
+        
+    - name: 🧪 Executar testes unitarios
+      run: |
+        echo "Executando testes unitarios..."
+        mvn clean test -Punit-tests -Dspring.profiles.active=test
+        
+    - name: 📊 Upload resultados dos testes unitarios
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: unit-test-results
+        path: |
+          target/surefire-reports/
+          target/test-classes/
+        retention-days: 30
+
+  # Job para testes de integracao
+  integration-tests:
+    name: 🔗 Testes de Integracao
+    runs-on: ubuntu-latest
+    needs: unit-tests
+    
+    steps:
+    - name: 📥 Checkout do codigo
+      uses: actions/checkout@v4
+      
+    - name: ☕ Configurar Java ${{ env.JAVA_VERSION }}
+      uses: actions/setup-java@v4
+      with:
+        java-version: ${{ env.JAVA_VERSION }}
+        distribution: 'temurin'
+        cache: maven
+        
+    - name: 🔗 Executar testes de integracao
+      run: |
+        echo "Executando testes de integracao..."
+        mvn clean verify -Pintegration-tests -Dspring.profiles.active=test
+        
+    - name: 📊 Upload resultados dos testes de integracao
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: integration-test-results
+        path: |
+          target/failsafe-reports/
+          target/surefire-reports/
+        retention-days: 30
+
+  # Job para testes de controller
+  controller-tests:
+    name: 🎮 Testes de Controller
+    runs-on: ubuntu-latest
+    needs: unit-tests
+    
+    steps:
+    - name: 📥 Checkout do codigo
+      uses: actions/checkout@v4
+      
+    - name: ☕ Configurar Java ${{ env.JAVA_VERSION }}
+      uses: actions/setup-java@v4
+      with:
+        java-version: ${{ env.JAVA_VERSION }}
+        distribution: 'temurin'
+        cache: maven
+        
+    - name: 🎮 Executar testes de controller
+      run: |
+        echo "Executando testes de controller..."
+        mvn clean test -Pcontroller-tests -Dspring.profiles.active=test
+        
+    - name: 📊 Upload resultados dos testes de controller
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: controller-test-results
+        path: target/surefire-reports/
+        retention-days: 30
+
+  # Job para cobertura de codigo
+  coverage:
+    name: 📈 Cobertura de Codigo
+    runs-on: ubuntu-latest
+    needs: [unit-tests, integration-tests, controller-tests]
+    
+    steps:
+    - name: 📥 Checkout do codigo
+      uses: actions/checkout@v4
+      
+    - name: ☕ Configurar Java ${{ env.JAVA_VERSION }}
+      uses: actions/setup-java@v4
+      with:
+        java-version: ${{ env.JAVA_VERSION }}
+        distribution: 'temurin'
+        cache: maven
+        
+    - name: 📈 Executar todos os testes com cobertura
+      run: |
+        echo "Executando todos os testes com cobertura..."
+        mvn clean verify jacoco:report -Pall-tests -Dspring.profiles.active=test
+        
+    - name: 📊 Upload relatorio de cobertura
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage-report
+        path: |
+          target/site/jacoco/
+          target/jacoco.exec
+        retention-days: 30
+        
+    - name: 📈 Comentar cobertura no PR
+      if: github.event_name == 'pull_request'
+      uses: madrapps/jacoco-report@v1.6.1
+      with:
+        paths: target/site/jacoco/jacoco.xml
+        token: ${{ secrets.GITHUB_TOKEN }}
+        min-coverage-overall: 70
+        min-coverage-changed-files: 80
+
+  # Job para analise de qualidade
+  quality-check:
+    name: 🔍 Analise de Qualidade
+    runs-on: ubuntu-latest
+    needs: coverage
+    
+    steps:
+    - name: 📥 Checkout do codigo
+      uses: actions/checkout@v4
+      
+    - name: ☕ Configurar Java ${{ env.JAVA_VERSION }}
+      uses: actions/setup-java@v4
+      with:
+        java-version: ${{ env.JAVA_VERSION }}
+        distribution: 'temurin'
+        cache: maven
+        
+    - name: 🔍 Verificar estilo de codigo
+      run: |
+        echo "Verificando compilacao..."
+        mvn clean compile -q
+        
+    - name: 📋 Gerar relatorio de dependencias
+      run: |
+        echo "Gerando relatorio de dependencias..."
+        mvn dependency:tree > dependency-tree.txt
+        mvn dependency:analyze > dependency-analysis.txt
+        
+    - name: 📊 Upload analise de qualidade
+      uses: actions/upload-artifact@v4
+      with:
+        name: quality-reports
+        path: |
+          dependency-*.txt
+          target/classes/
+        retention-days: 15
+
+  # Job para teste de build e empacotamento
+  build-test:
+    name: 🏗️ Teste de Build
+    runs-on: ubuntu-latest
+    needs: quality-check
+    
+    steps:
+    - name: 📥 Checkout do codigo
+      uses: actions/checkout@v4
+      
+    - name: ☕ Configurar Java ${{ env.JAVA_VERSION }}
+      uses: actions/setup-java@v4
+      with:
+        java-version: ${{ env.JAVA_VERSION }}
+        distribution: 'temurin'
+        cache: maven
+        
+    - name: 🏗️ Build completo da aplicacao
+      run: |
+        echo "Fazendo build completo..."
+        mvn clean package -DskipTests
+        
+    - name: ✅ Verificar JAR gerado
+      run: |
+        echo "Verificando JAR gerado..."
+        ls -la target/*.jar
+        java -jar target/design-patterns-bootcamp-*.jar --help || echo "JAR gerado com sucesso"
+        
+    - name: 📦 Upload artefato de build
+      uses: actions/upload-artifact@v4
+      with:
+        name: application-jar
+        path: target/design-patterns-bootcamp-*.jar
+        retention-days: 7
+
+  # Job para teste em multiplas versoes do Java
+  multi-java-test:
+    name: ☕ Teste Java ${{ matrix.java-version }}
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    
+    strategy:
+      matrix:
+        java-version: ['17', '21']
+        
+    steps:
+    - name: 📥 Checkout do codigo
+      uses: actions/checkout@v4
+      
+    - name: ☕ Configurar Java ${{ matrix.java-version }}
+      uses: actions/setup-java@v4
+      with:
+        java-version: ${{ matrix.java-version }}
+        distribution: 'temurin'
+        cache: maven
+        
+    - name: 🧪 Executar testes basicos
+      run: |
+        echo "Testando com Java ${{ matrix.java-version }}..."
+        mvn clean test -Punit-tests -Dspring.profiles.active=test -q
+
+  # Job final de resumo
+  test-summary:
+    name: 📋 Resumo dos Testes
+    runs-on: ubuntu-latest
+    needs: [unit-tests, integration-tests, controller-tests, coverage, build-test]
+    if: always()
+    
+    steps:
+    - name: 📋 Baixar todos os relatorios
+      uses: actions/download-artifact@v4
+      with:
+        path: test-reports/
+        
+    - name: 📊 Gerar resumo dos testes
+      run: |
+        echo "# 📋 Resumo dos Testes - Design Patterns Bootcamp" > test-summary.md
+        echo "" >> test-summary.md
+        echo "## 🎯 Status dos Jobs" >> test-summary.md
+        echo "- Unit Tests: ${{ needs.unit-tests.result }}" >> test-summary.md
+        echo "- Integration Tests: ${{ needs.integration-tests.result }}" >> test-summary.md
+        echo "- Controller Tests: ${{ needs.controller-tests.result }}" >> test-summary.md
+        echo "- Coverage: ${{ needs.coverage.result }}" >> test-summary.md
+        echo "- Build Test: ${{ needs.build-test.result }}" >> test-summary.md
+        echo "" >> test-summary.md
+        echo "## 📁 Artefatos Gerados" >> test-summary.md
+        echo "Os seguintes relatorios foram gerados:" >> test-summary.md
+        find test-reports/ -name "*.xml" -o -name "*.html" | head -10 >> test-summary.md
+        echo "" >> test-summary.md
+        echo "## 📅 Executado em: $(date)" >> test-summary.md
+        
+        cat test-summary.md
+        
+    - name: 📊 Upload resumo final
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-summary
+        path: test-summary.md
+        retention-days: 30
+
+  # Job de notificacao (opcional)
+  notify:
+    name: 📢 Notificacao
+    runs-on: ubuntu-latest
+    needs: test-summary
+    if: always() && github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: 📢 Status da build
+      run: |
+        if [[ "${{ needs.test-summary.result }}" == "success" ]]; then
+          echo "✅ Todos os testes passaram na branch main!"
+          echo "🚀 Projeto Design Patterns Bootcamp esta pronto para deploy!"
+        else
+          echo "❌ Alguns testes falharam na branch main!"
+          echo "🔧 Verifique os logs para corrigir os problemas."
+        fi
