@@ -1,0 +1,46 @@
+# Configuracoes da aplicacao Spring Boot
+spring:
+  application:
+    name: Design Patterns Bootcamp API
+  
+  # Configuracao do banco H2 em memoria
+  datasource:
+    url: jdbc:h2:mem:testdb
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: 
+  
+  # Configuracao do JPA/Hibernate
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+    format-sql: true
+  
+  # Console do H2 para visualizar dados
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
+# Configuracao do servidor
+server:
+  port: 8080
+  servlet:
+    context-path: /api
+
+# Configuracao de logs
+logging:
+  level:
+    com.bootcamp.designpatterns: DEBUG
+    org.springframework.web: INFO
+    org.hibernate.SQL: DEBUG
+
+# Configuracao do Swagger/OpenAPI
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
