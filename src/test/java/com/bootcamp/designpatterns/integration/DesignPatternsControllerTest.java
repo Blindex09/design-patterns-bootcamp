@@ -358,4 +358,25 @@ public class DesignPatternsControllerTest {
         
         System.out.println("✓ Controller Complex Query Parameters testado com sucesso");
     }
+    
+    // ========== TESTE DE ENDPOINT DE SAUDAÇÃO ==========
+    
+    @Test
+    @DisplayName("Controller - Endpoint de saudação Ola")
+    void testOlaEndpoint() throws Exception {
+        // Act & Assert
+        mockMvc.perform(get("/design-patterns/ola"))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.mensagem").value("Olá! Bem-vindo à API de Design Patterns!"))
+                .andExpect(jsonPath("$.descricao").value("Esta API demonstra padrões GoF (Gang of Four) com Spring Framework"))
+                .andExpect(jsonPath("$.padroes").isArray())
+                .andExpect(jsonPath("$.padroes.length()").value(3))
+                .andExpect(jsonPath("$.padroes[0]").value("Singleton"))
+                .andExpect(jsonPath("$.padroes[1]").value("Strategy"))
+                .andExpect(jsonPath("$.padroes[2]").value("Facade"));
+        
+        System.out.println("✓ Controller Ola Endpoint testado com sucesso");
+    }
 }

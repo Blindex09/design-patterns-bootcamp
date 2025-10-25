@@ -220,6 +220,21 @@ public class DesignPatternsController {
     }
     
     /**
+     * Endpoint simples de saudação
+     */
+    @GetMapping("/ola")
+    @Operation(summary = "Endpoint de saudação", 
+               description = "Retorna uma mensagem de boas-vindas")
+    public ResponseEntity<Map<String, Object>> ola() {
+        Map<String, Object> response = new HashMap<>();
+        response.put("mensagem", "Olá! Bem-vindo à API de Design Patterns!");
+        response.put("descricao", "Esta API demonstra padrões GoF (Gang of Four) com Spring Framework");
+        response.put("padroes", List.of("Singleton", "Strategy", "Facade"));
+        
+        return ResponseEntity.ok(response);
+    }
+    
+    /**
      * Metodo auxiliar para criar estrategias baseado no tipo
      */
     private DiscountStrategy createStrategy(String type, BigDecimal value) {
