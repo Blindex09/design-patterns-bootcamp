@@ -359,10 +359,10 @@ public class DesignPatternsControllerTest {
         System.out.println("✓ Controller Complex Query Parameters testado com sucesso");
     }
     
-    // ========== TESTE DE ENDPOINT DE SAUDACAO ==========
+    // ========== TESTE DE ENDPOINT DE SAUDAÇÃO ==========
     
     @Test
-    @DisplayName("Controller - Endpoint de saudacao Ola")
+    @DisplayName("Controller - Endpoint de saudação Ola")
     void testOlaEndpoint() throws Exception {
         // Act & Assert
         mockMvc.perform(get("/design-patterns/ola"))

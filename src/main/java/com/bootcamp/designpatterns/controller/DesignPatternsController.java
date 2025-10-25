@@ -220,10 +220,10 @@ public class DesignPatternsController {
     }
     
     /**
-     * Endpoint simples de saudacao
+     * Endpoint simples de saudação
      */
     @GetMapping("/ola")
-    @Operation(summary = "Endpoint de saudacao", 
+    @Operation(summary = "Endpoint de saudação", 
                description = "Retorna uma mensagem de boas-vindas")
     public ResponseEntity<Map<String, Object>> ola() {
         Map<String, Object> response = new HashMap<>();
